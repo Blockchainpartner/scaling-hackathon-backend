@@ -9,6 +9,7 @@ import (
 	"github.com/microgolang/logs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // RegistryMapping is the base of data to create a registry
@@ -91,7 +92,7 @@ func (x *RegistryMapping) List() ([]RegistryMapping, error) {
 
 //ListBy will perform a search in the Users collection to find all the elements
 func (x *RegistryMapping) ListBy(by bson.M) ([]RegistryMapping, error) {
-	query, err := db.RegistriesMapping.Find(context.Background(), by)
+	query, err := db.RegistriesMapping.Find(context.Background(), by, options.Find().SetSort(bson.M{`identityIndex`: -1}))
 	if err != nil {
 		return nil, err
 	}
