@@ -33,6 +33,7 @@ func NewRouter() *gin.Engine {
 	{
 		c := registriesController{}
 		router.GET(`registry/:registryKey/identities`, c.ListIdentities)
+		router.POST(`registry/:registryKey/identities`, c.AddIdentities)
 	}
 
 	return router
