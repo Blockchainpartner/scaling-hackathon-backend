@@ -86,6 +86,7 @@ func startAPI() cli.Command {
 			_ = godotenv.Load(env)
 			utils.InitEnvironment()
 			db.Init()
+			utils.InitPusher()
 
 			return controllers.NewRouter().Run()
 		},

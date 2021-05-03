@@ -28,12 +28,19 @@ func NewRouter() *gin.Engine {
 		c := usersController{}
 		router.POST(`user/find`, c.FindUser)
 		router.POST(`user/add`, c.AddUser)
+		router.POST(`user/validate/:userUUID`, c.ValidateUser)
 	}
 
 	{
 		c := registriesController{}
+		router.GET(`registries`, c.ListRegistries)
 		router.GET(`registry/:registryKey/identities`, c.ListIdentities)
 		router.POST(`registry/:registryKey/identities`, c.AddIdentities)
+	}
+
+	{
+		c := pusherController{}
+		router.POST(`pusher`, c.AuthPusher)
 	}
 
 	return router

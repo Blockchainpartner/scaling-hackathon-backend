@@ -23,22 +23,16 @@ type KYCDob struct {
 	Age  uint8   `json:"age" bson:"age"`
 }
 
-// KYCID represent the informations about the user's KYC ID field
-type KYCID struct {
-	Name  *string `json:"name" bson:"name"`
-	Value *string `json:"value" bson:"value"`
-}
-
 // KYCLocation represent the informations about the user's KYC Location field
 type KYCLocation struct {
-	City     *string `json:"city" bson:"city"`
-	Country  *string `json:"country" bson:"country"`
-	Postcode *string `json:"postcode" bson:"postcode"`
-	State    *string `json:"state" bson:"state"`
+	City     *string `json:"city,omitempty" bson:"city"`
+	Country  *string `json:"country,omitempty" bson:"country"`
+	Postcode *string `json:"postcode,omitempty" bson:"postcode"`
+	State    *string `json:"state,omitempty" bson:"state"`
 	Street   struct {
-		Name   *string `json:"name" bson:"name"`
-		Number uint8   `json:"number" bson:"number"`
-	} `json:"state" bson:"state"`
+		Name   *string `json:"name,omitempty" bson:"name"`
+		Number *int    `json:"number,omitempty" bson:"number"`
+	} `json:"street" bson:"street"`
 }
 
 // KYC represent the informations about the user's KYC
@@ -49,16 +43,15 @@ type KYC struct {
 	Cell     *string     `json:"cell" bson:"cell"`
 	Email    *string     `json:"email" bson:"email"`
 	Gender   *string     `json:"gender" bson:"gender"`
+	Disabled *bool       `json:"disabled" bson:"disabled"`
 	Dob      KYCDob      `json:"dob" bson:"dob"`
-	ID       KYCID       `json:"id" bson:"id"`
 	Location KYCLocation `json:"location" bson:"location"`
 }
 
 // User is the base of data to create a user
 type User struct {
 	ID         *primitive.ObjectID `json:"-" bson:"_id,omitempty"`
-	UUID       *string             `json:"UUID" bson:"UUID"`
-	Address    *string             `json:"address" bson:"address"`
+	UUID       *string             `json:"UUID,omitempty" bson:"UUID"`
 	Password   *string             `json:"password" bson:"password"`
 	IsVerified *bool               `json:"isVerified" bson:"isVerified"`
 	KYC        KYC                 `json:"KYC" bson:"KYC"`

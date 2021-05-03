@@ -18,6 +18,8 @@ require (
 	github.com/klauspost/compress v1.11.9 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/microgolang/logs v0.0.0-20200601175756-9e57764878d7
+	github.com/pusher/pusher-http-go v4.0.1+incompatible // indirect
+	github.com/pusher/pusher-http-go/v5 v5.0.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/urfave/cli v1.22.5

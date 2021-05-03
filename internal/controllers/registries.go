@@ -11,10 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Blockchainpartner/scaling-hackathon-backend/internal/ethereum"
 	"github.com/Blockchainpartner/scaling-hackathon-backend/internal/models"
 	"github.com/Blockchainpartner/scaling-hackathon-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/microgolang/logs"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -43,6 +45,8 @@ func execPythonCairoCompile(input CairoProgramInput) ([]string, error) {
 	cmd := exec.Command(
 		"python3",
 		cairoScriptPath,
+		`--exception`,
+		`-1`,
 		`--program`,
 		cairoProgramPath,
 		`--program_input`,
@@ -104,7 +108,7 @@ func execPythonSharp(input CairoProgramInput) ([]string, error) {
 	err = json.Unmarshal([]byte(outStr), &result)
 	return result, err
 }
-func execPythonSharpStatus(fact string) (bool, error) {
+func execPythonSharpStatus(registryKey, fact, job string) (bool, error) {
 	cairoScriptPath, err := filepath.Abs(`../scripts/sharp.py`)
 	if err != nil {
 		return false, err
@@ -121,14 +125,50 @@ func execPythonSharpStatus(fact string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+		utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
+			`registry`: registryKey,
+			`step`:     `Still waiting for Sharp to process the program`,
+			`type`:     `info`,
+		})
 		if string(out) == `IN_PROGRESS` {
 			time.Sleep(time.Second * 10)
 		} else if string(out) == `PROCESSED` {
-			return true, err
+			break
 		} else {
 			return false, errors.New(`Invalid fact`)
 		}
 	}
+
+	logs.Success(job)
+
+	cmd := exec.Command(
+		"python3",
+		cairoScriptPath,
+		`is_verified`,
+		job,
+		`--node_url`,
+		utils.EthNodeURIHttp,
+	)
+	out, err := cmd.Output()
+	if err != nil {
+		return false, err
+	}
+	logs.Info(string(out))
+	return true, nil
+}
+
+//ListRegistries is triggered to retrieve the list of all the registries
+func (y registriesController) ListRegistries(c *gin.Context) {
+	registries, err := models.NewRegistry().List()
+	if err != nil {
+		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `could not find registries`})
+		return
+	}
+	result := []string{}
+	for _, r := range registries {
+		result = append(result, *r.Key)
+	}
+	c.JSON(http.StatusOK, result)
 }
 
 //ListIdentities is triggered to retrieve the list of all the identities in a registry
@@ -155,8 +195,6 @@ func (y registriesController) ListIdentities(c *gin.Context) {
 func (y registriesController) AddIdentities(c *gin.Context) {
 	type bodyData struct {
 		Identities []string `json:"identities"`
-		OldHash    *string  `json:"oldHash"`
-		NewHash    *string  `json:"newHash"`
 	}
 
 	var registryKey = c.Param(`registryKey`)
@@ -192,6 +230,7 @@ func (y registriesController) AddIdentities(c *gin.Context) {
 		newRegistry = append(newRegistry, *id.Identity)
 	}
 	newRegistry = append(newRegistry, body.Identities...)
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `will-do`})
 
 	/**************************************************************************
 	** First python job
@@ -204,6 +243,7 @@ func (y registriesController) AddIdentities(c *gin.Context) {
 		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `impossible to compute proof`})
 		return
 	}
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `sharp-send`})
 
 	/**************************************************************************
 	** Second python job
@@ -215,19 +255,94 @@ func (y registriesController) AddIdentities(c *gin.Context) {
 		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `impossible to compute proof`})
 		return
 	}
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `computation-ok`})
 
 	/**************************************************************************
 	** Third python job -> Waiting for the job to be PROCESSED
 	**************************************************************************/
-	resultStatus, err := execPythonSharpStatus(resultSharp[0])
+	resultStatus, err := execPythonSharpStatus(registryKey, resultSharp[0], resultSharp[1])
 	if err != nil || !resultStatus {
 		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `impossible to check the fact`})
 		return
 	}
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `sharp-ok`})
 
 	c.JSON(http.StatusOK, gin.H{
 		`jobID`:  resultSharp[0],
 		`fact`:   resultSharp[1],
 		`output`: result,
 	})
+}
+
+//AddIdentities will a new identity to the registry, but only if the proof is valid
+func AddIdentitiesToRegistry(newIdentities []string, registryKey string) error {
+	/**************************************************************************
+	** Let's retrieve the identities in the DB
+	**************************************************************************/
+	identities, err := models.NewRegistryMapping().ListBy(bson.M{`registryKey`: registryKey})
+	if err != nil {
+		logs.Error(err)
+		return err
+	}
+
+	/**************************************************************************
+	** Let's populate the registries
+	**************************************************************************/
+	oldRegistry := []string{}
+	newRegistry := []string{}
+	for _, id := range identities {
+		oldRegistry = append(oldRegistry, *id.Identity)
+		newRegistry = append(newRegistry, *id.Identity)
+	}
+	newRegistry = append(newRegistry, newIdentities...)
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`registry`: registryKey, `step`: `Starting proof for registry`, `type`: `info`})
+
+	/**************************************************************************
+	** First python job
+	** This one will send the program & the inputs to the sharp prover in order
+	** to validate the outputs and it's execution. The prover is async, that's
+	** why we are starting with this one.
+	**************************************************************************/
+	resultSharp, err := execPythonSharp(CairoProgramInput{OldRegistry: oldRegistry, NewRegistry: newRegistry})
+	if err != nil {
+		logs.Error(err)
+		return err
+	}
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`registry`: registryKey, `step`: `The proof has been sent to Sharp`, `type`: `success`})
+
+	/**************************************************************************
+	** Second python job
+	** This one will compute the outputs through the cairo program in order to
+	** be able to submit the tx.
+	**************************************************************************/
+	result, err := execPythonCairoCompile(CairoProgramInput{OldRegistry: oldRegistry, NewRegistry: newRegistry})
+	if err != nil {
+		logs.Error(err)
+		return err
+	}
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `The proof has been compiled`,
+		`type`:     `success`,
+	})
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `Waiting for Sharp to process the transaction`,
+		`type`:     `info`,
+	})
+
+	/**************************************************************************
+	** Third python job -> Waiting for the job to be PROCESSED
+	**************************************************************************/
+	resultStatus, err := execPythonSharpStatus(registryKey, resultSharp[0], resultSharp[1])
+	if err != nil || !resultStatus {
+		return err
+	}
+	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `The proof is now processed`,
+		`type`:     `success`,
+	})
+
+	return ethereum.UpdateRegistry(registryKey, result[0], result[1])
 }

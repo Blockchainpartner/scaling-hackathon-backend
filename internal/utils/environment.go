@@ -13,9 +13,19 @@ var (
 
 	// EthNodeURI : Uri of the ethereum node
 	EthNodeURI string
+	// EthNodeURIHttp : Uri of the ethereum node in http mode
+	EthNodeURIHttp string
+	// EthPrivateKey : PrivateKey used for this demonstration
+	EthPrivateKey string
+	// EthContractAddress : address of our smartcontract
+	EthContractAddress string
 
-	// EtherscanAPI represent the APIKey for etherscan
-	EtherscanAPI string
+	// PusherSecret represent the pusher secret
+	PusherSecret string
+	// PusherKey represent the pusher key
+	PusherKey string
+	// PusherID represent the pusher ID
+	PusherID string
 )
 
 func initMongoDB() {
@@ -37,14 +47,34 @@ func initEthCore() {
 	if !exists {
 		log.Fatal("ETH_NODE_URI environment variable not set")
 	}
+	EthNodeURIHttp, exists = os.LookupEnv("ETH_NODE_URI_HTTP")
+	if !exists {
+		log.Fatal("ETH_NODE_URI_HTTP environment variable not set")
+	}
+	EthPrivateKey, exists = os.LookupEnv("ETH_PRIVATE_KEY")
+	if !exists {
+		log.Fatal("ETH_PRIVATE_KEY environment variable not set")
+	}
+	EthContractAddress, exists = os.LookupEnv("ETH_CONTRACT_ADDRESS")
+	if !exists {
+		log.Fatal("ETH_CONTRACT_ADDRESS environment variable not set")
+	}
 }
 
 func initAPIKeys() {
 	var exists bool
 
-	EtherscanAPI, exists = os.LookupEnv("API_ETHERSCAN")
+	PusherSecret, exists = os.LookupEnv("PUSHER_SECRET")
 	if !exists {
-		log.Fatal("API_ETHERSCAN environment variable not set")
+		log.Fatal("PUSHER_SECRET environment variable not set")
+	}
+	PusherKey, exists = os.LookupEnv("PUSHER_KEY")
+	if !exists {
+		log.Fatal("PUSHER_KEY environment variable not set")
+	}
+	PusherID, exists = os.LookupEnv("PUSHER_ID")
+	if !exists {
+		log.Fatal("PUSHER_ID environment variable not set")
 	}
 }
 
@@ -52,5 +82,5 @@ func initAPIKeys() {
 func InitEnvironment() {
 	initMongoDB()
 	initEthCore()
-	// initAPIKeys()
+	initAPIKeys()
 }

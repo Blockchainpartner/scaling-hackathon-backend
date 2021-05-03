@@ -19,7 +19,7 @@ from starkware.cairo.lang.vm.security import verify_secure_runner
 from starkware.cairo.lang.vm.vm import VmException
 from starkware.cairo.lang.compiler.expression_simplifier import to_field_element
 
-def retrieveOutput(runner, output_callback=to_field_element):
+def retrieveOutput(runner, exception, output_callback=to_field_element):
 	if 'output_builtin' not in runner.builtin_runners:
 		return
 
@@ -29,7 +29,7 @@ def retrieveOutput(runner, output_callback=to_field_element):
 	for i in range(size):
 		val = runner.vm_memory.get(output_runner.base + i)
 		if val is not None:
-			if i == 0:
+			if i == exception:
 				toAppend = output_callback(val=val, prime=runner.program.prime)
 				toAppend = hex(toAppend + runner.program.prime)
 				output.append(toAppend)
@@ -61,7 +61,7 @@ def cairo_run(args, program_input):
 	runner.finalize_segments_by_effective_size()
 	verify_secure_runner(runner)
 	runner.relocate()
-	output = retrieveOutput(runner)
+	output = retrieveOutput(runner, args.exception)
 
 	return output
 
@@ -71,6 +71,7 @@ def prepare_cairo_run():
 	parser = argparse.ArgumentParser(description='A tool to run Cairo programs.')
 	parser.add_argument('--program', type=argparse.FileType('r'))
 	parser.add_argument('--program_input', type=str)
+	parser.add_argument('--exception', type=int)
 	parser.add_argument('--print_output', action='store_true')
 	parser.add_argument('--layout', default='plain')
 	parser.add_argument('--flavor', type=str, choices=['Debug', 'Release', 'RelWithDebInfo'])
