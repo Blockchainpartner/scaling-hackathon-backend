@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Blockchainpartner/scaling-hackathon-backend/internal/ethereum"
 	"github.com/Blockchainpartner/scaling-hackathon-backend/internal/models"
 	"github.com/Blockchainpartner/scaling-hackathon-backend/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -272,77 +271,4 @@ func (y registriesController) AddIdentities(c *gin.Context) {
 		`fact`:   resultSharp[1],
 		`output`: result,
 	})
-}
-
-//AddIdentities will a new identity to the registry, but only if the proof is valid
-func AddIdentitiesToRegistry(newIdentities []string, registryKey string) error {
-	/**************************************************************************
-	** Let's retrieve the identities in the DB
-	**************************************************************************/
-	identities, err := models.NewRegistryMapping().ListBy(bson.M{`registryKey`: registryKey})
-	if err != nil {
-		logs.Error(err)
-		return err
-	}
-
-	/**************************************************************************
-	** Let's populate the registries
-	**************************************************************************/
-	oldRegistry := []string{}
-	newRegistry := []string{}
-	for _, id := range identities {
-		oldRegistry = append(oldRegistry, *id.Identity)
-		newRegistry = append(newRegistry, *id.Identity)
-	}
-	newRegistry = append(newRegistry, newIdentities...)
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`registry`: registryKey, `step`: `Starting proof for registry`, `type`: `info`})
-
-	/**************************************************************************
-	** First python job
-	** This one will send the program & the inputs to the sharp prover in order
-	** to validate the outputs and it's execution. The prover is async, that's
-	** why we are starting with this one.
-	**************************************************************************/
-	resultSharp, err := execPythonSharp(CairoProgramInput{OldRegistry: oldRegistry, NewRegistry: newRegistry})
-	if err != nil {
-		logs.Error(err)
-		return err
-	}
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`registry`: registryKey, `step`: `The proof has been sent to Sharp`, `type`: `success`})
-
-	/**************************************************************************
-	** Second python job
-	** This one will compute the outputs through the cairo program in order to
-	** be able to submit the tx.
-	**************************************************************************/
-	result, err := execPythonCairoCompile(CairoProgramInput{OldRegistry: oldRegistry, NewRegistry: newRegistry})
-	if err != nil {
-		logs.Error(err)
-		return err
-	}
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
-		`registry`: registryKey,
-		`step`:     `The proof has been compiled`,
-		`type`:     `success`,
-	})
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
-		`registry`: registryKey,
-		`step`:     `Waiting for Sharp to process the transaction`,
-		`type`:     `info`,
-	})
-
-	/**************************************************************************
-	** Third python job -> Waiting for the job to be PROCESSED
-	**************************************************************************/
-	resultStatus, err := execPythonSharpStatus(registryKey, resultSharp[0], resultSharp[1])
-	if err != nil || !resultStatus {
-		return err
-	}
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
-		`registry`: registryKey,
-		`step`:     `The proof is now processed`,
-		`type`:     `success`,
-	})
-
-	return ethereum.UpdateRegistry(registryKey, result[0], result[1])
 }
