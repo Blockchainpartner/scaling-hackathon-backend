@@ -91,7 +91,6 @@ def prepare_cairo_run():
 		try:
 			res = subparsers[args.command](args, unknown)
 		except Exception as exc:
-			print(exc)
 			res = ["", ""]
 	return res
 

@@ -86,8 +86,7 @@ def prepare_cairo_run():
 		try:
 			res = cairo_run(args, json.loads(args.program_input))
 		except VmException as err:
-			print(err, file=sys.stderr)
-			res = 0
+			res = ["0", "0"]
 		except AssertionError as err:
 			print(f'Error: {err}', file=sys.stderr)
 			res = 0

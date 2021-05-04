@@ -162,7 +162,7 @@ func AddIdentitiesToRegistry(wg *sync.WaitGroup, newIdentities []string, registr
 	** to validate the outputs and it's execution. The prover is async, that's
 	** why we are starting with this one.
 	**************************************************************************/
-	resultSharp, err := execPythonSharp(CairoProgramInput{OldRegistry: oldRegistry, NewRegistry: newRegistry})
+	resultSharp, err := execPythonSharpRegistry(CairoProgramInputRegistry{OldRegistry: oldRegistry, NewRegistry: newRegistry})
 	if err != nil {
 		logs.Error(err)
 		return err
@@ -178,7 +178,7 @@ func AddIdentitiesToRegistry(wg *sync.WaitGroup, newIdentities []string, registr
 	** This one will compute the outputs through the cairo program in order to
 	** be able to submit the tx.
 	**************************************************************************/
-	result, err := execPythonCairoCompile(CairoProgramInput{OldRegistry: oldRegistry, NewRegistry: newRegistry})
+	result, err := execPythonCairoCompileRegistry(CairoProgramInputRegistry{OldRegistry: oldRegistry, NewRegistry: newRegistry})
 	if err != nil {
 		logs.Error(err)
 		return err
@@ -197,7 +197,7 @@ func AddIdentitiesToRegistry(wg *sync.WaitGroup, newIdentities []string, registr
 	/**************************************************************************
 	** Third python job -> Waiting for the job to be PROCESSED
 	**************************************************************************/
-	resultStatus, err := execPythonSharpStatus(registryKey, resultSharp[0], resultSharp[1])
+	resultStatus, err := execPythonSharpStatusRegistry(registryKey, resultSharp[0], resultSharp[1])
 	if err != nil || !resultStatus {
 		return err
 	}

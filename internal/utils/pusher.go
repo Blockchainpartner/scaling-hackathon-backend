@@ -22,6 +22,7 @@ type Channel struct {
 //Pusher define the pusher class
 type Pusher struct {
 	Identities *Channel
+	Claims     *Channel
 }
 
 //IdentitiesChannel represent the list of channels for the identities
@@ -29,6 +30,14 @@ var IdentitiesChannel = &Channel{
 	ID: `identity`,
 	EventsFunc: map[string]func(data interface{}){
 		`PROCESS`: func(data interface{}) { _ = pusherClient.Trigger(`private-identity`, `processIdentity`, data) },
+	},
+}
+
+//ClaimsChannel represent the list of channels for the claims
+var ClaimsChannel = &Channel{
+	ID: `claim`,
+	EventsFunc: map[string]func(data interface{}){
+		`PROCESS`: func(data interface{}) { _ = pusherClient.Trigger(`private-claims`, `processClaim`, data) },
 	},
 }
 
@@ -40,16 +49,13 @@ func InitPusher() {
 		Secret:  PusherSecret,
 		Cluster: `eu`,
 	}
-
-	data := map[string]string{"message": "hello world"}
-	pusherClient.Trigger("private-identity", "processIdentity", data)
-
 }
 
 // NewPusher create a new pusher Object
 func NewPusher() (x *Pusher) {
 	return &Pusher{
 		Identities: IdentitiesChannel,
+		Claims:     ClaimsChannel,
 	}
 }
 

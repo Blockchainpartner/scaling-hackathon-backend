@@ -1,3 +1,10 @@
+/******************************************************************************
+**	@Author:				Thomas Bouder <Tbouder>
+**	@Email:					Tbouder@protonmail.com
+**	@Date:					Tuesday May 4th 2021
+**	@Filename:				users copy.go
+******************************************************************************/
+
 package controllers
 
 import (
@@ -19,14 +26,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type registriesController struct{}
+type proofController struct{}
 
-type CairoProgramInputRegistry struct {
-	OldRegistry []string `json:"oldRegistry"`
-	NewRegistry []string `json:"newRegistry"`
+type CairoProgramInputClaim struct {
+	Address  string   `json:"address"`
+	Secret   string   `json:"secret"`
+	Registry []string `json:"registry"`
 }
 
-func execPythonCairoCompileRegistry(input CairoProgramInputRegistry) ([]string, error) {
+func execPythonCairoCompileClaim(input CairoProgramInputClaim) ([]string, error) {
 	jsonInput, err := json.Marshal(input)
 	if err != nil {
 		return nil, err
@@ -36,7 +44,7 @@ func execPythonCairoCompileRegistry(input CairoProgramInputRegistry) ([]string, 
 	if err != nil {
 		return nil, err
 	}
-	cairoProgramPath, err := filepath.Abs(`../scripts/registryProgram.json`)
+	cairoProgramPath, err := filepath.Abs(`../scripts/claimProgram.json`)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +70,7 @@ func execPythonCairoCompileRegistry(input CairoProgramInputRegistry) ([]string, 
 	err = json.Unmarshal([]byte(outStr), &result)
 	return result, err
 }
-func execPythonSharpRegistry(input CairoProgramInputRegistry) ([]string, error) {
+func execPythonSharpClaim(input CairoProgramInputClaim) ([]string, error) {
 	jsonInput, err := json.Marshal(input)
 	if err != nil {
 		return nil, err
@@ -84,7 +92,7 @@ func execPythonSharpRegistry(input CairoProgramInputRegistry) ([]string, error) 
 	if err != nil {
 		return nil, err
 	}
-	cairoProgramPath, err := filepath.Abs(`../scripts/registryProgram.json`)
+	cairoProgramPath, err := filepath.Abs(`../scripts/claimProgram.json`)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +115,7 @@ func execPythonSharpRegistry(input CairoProgramInputRegistry) ([]string, error) 
 	err = json.Unmarshal([]byte(outStr), &result)
 	return result, err
 }
-func execPythonSharpStatusRegistry(registryKey, fact, job string) (bool, error) {
+func execPythonSharpStatusClaim(registryKey, fact, job string) (bool, error) {
 	cairoScriptPath, err := filepath.Abs(`../scripts/sharp.py`)
 	if err != nil {
 		return false, err
@@ -124,7 +132,7 @@ func execPythonSharpStatusRegistry(registryKey, fact, job string) (bool, error) 
 		if err != nil {
 			return false, err
 		}
-		utils.NewPusher().Identities.Push(`PROCESS`, gin.H{
+		utils.NewPusher().Claims.Push(`PROCESS`, gin.H{
 			`registry`: registryKey,
 			`step`:     `Still waiting for Sharp to process the program`,
 			`type`:     `info`,
@@ -137,76 +145,30 @@ func execPythonSharpStatusRegistry(registryKey, fact, job string) (bool, error) 
 			return false, errors.New(`Invalid fact`)
 		}
 	}
-
-	logs.Success(job)
-
-	cmd := exec.Command(
-		"python3",
-		cairoScriptPath,
-		`is_verified`,
-		job,
-		`--node_url`,
-		utils.EthNodeURIHttp,
-	)
-	out, err := cmd.Output()
-	if err != nil {
-		return false, err
-	}
-	logs.Info(string(out))
 	return true, nil
 }
 
-//ListRegistries is triggered to retrieve the list of all the registries
-func (y registriesController) ListRegistries(c *gin.Context) {
-	registries, err := models.NewRegistry().List()
-	if err != nil {
-		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `could not find registries`})
-		return
-	}
-	result := []string{}
-	for _, r := range registries {
-		result = append(result, *r.Key)
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-//ListIdentities is triggered to retrieve the list of all the identities in a registry
-func (y registriesController) ListIdentities(c *gin.Context) {
-	var registryKey = c.Param(`registryKey`)
-	if registryKey == `` {
-		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `missing registryKey`})
-		return
-	}
-
-	identities, err := models.NewRegistryMapping().ListBy(bson.M{`registryKey`: registryKey})
-	if err != nil {
-		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `could not find identities`})
-		return
-	}
-	idMapping := []string{}
-	for _, id := range identities {
-		idMapping = append(idMapping, *id.Identity)
-	}
-	c.JSON(http.StatusOK, idMapping)
-}
-
-//AddIdentities will a new identity to the registry, but only if the proof is valid
-func (y registriesController) AddIdentities(c *gin.Context) {
-	type bodyData struct {
-		Identities []string `json:"identities"`
-	}
-
-	var registryKey = c.Param(`registryKey`)
-	if registryKey == `` {
-		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `missing registryKey`})
-		return
+//Prove is triggered in order to prove something
+func (y proofController) Prove(c *gin.Context) {
+	type proofData struct {
+		Address *string `json:"address"`
+		Secret  *string `json:"secret"`
 	}
 	/**************************************************************************
 	** Do we have a valid body ?
 	**************************************************************************/
-	var body bodyData
+	var body proofData
 	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		utils.AbortWithLog(c, http.StatusBadRequest, err, gin.H{`error`: `bad request`})
+		return
+	}
+
+	/**************************************************************************
+	** Retrieve the user's UUID
+	**************************************************************************/
+	var registryKey = c.Param(`registryKey`)
+	if registryKey == `` {
+		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `missing registryKey`})
 		return
 	}
 
@@ -215,21 +177,22 @@ func (y registriesController) AddIdentities(c *gin.Context) {
 	**************************************************************************/
 	identities, err := models.NewRegistryMapping().ListBy(bson.M{`registryKey`: registryKey})
 	if err != nil {
-		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `could not find identities`})
+		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `impossible to retrieve identities`})
 		return
 	}
-
 	/**************************************************************************
 	** Let's populate the registries
 	**************************************************************************/
-	oldRegistry := []string{}
-	newRegistry := []string{}
+	registry := []string{}
 	for _, id := range identities {
-		oldRegistry = append(oldRegistry, *id.Identity)
-		newRegistry = append(newRegistry, *id.Identity)
+		registry = append(registry, *id.Identity)
 	}
-	newRegistry = append(newRegistry, body.Identities...)
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `will-do`})
+
+	utils.NewPusher().Claims.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `Proving identity in registry ...`,
+		`type`:     `info`,
+	})
 
 	/**************************************************************************
 	** First python job
@@ -237,38 +200,55 @@ func (y registriesController) AddIdentities(c *gin.Context) {
 	** to validate the outputs and it's execution. The prover is async, that's
 	** why we are starting with this one.
 	**************************************************************************/
-	resultSharp, err := execPythonSharpRegistry(CairoProgramInputRegistry{OldRegistry: oldRegistry, NewRegistry: newRegistry})
+	resultSharp, err := execPythonSharpClaim(CairoProgramInputClaim{Address: *body.Address, Secret: *body.Secret, Registry: registry})
 	if err != nil {
-		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `impossible to compute proof`})
+		logs.Error(err)
+		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `impossible to submit program to sharp`})
+		return
+	} else if resultSharp[0] == `0` && resultSharp[1] == `0` {
+		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `Invalid claim`})
 		return
 	}
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `sharp-send`})
+	utils.NewPusher().Claims.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `The proof has been sent to Sharp`,
+		`type`:     `success`,
+	})
 
 	/**************************************************************************
 	** Second python job
 	** This one will compute the outputs through the cairo program in order to
 	** be able to submit the tx.
 	**************************************************************************/
-	result, err := execPythonCairoCompileRegistry(CairoProgramInputRegistry{OldRegistry: oldRegistry, NewRegistry: newRegistry})
+	result, err := execPythonCairoCompileClaim(CairoProgramInputClaim{Address: *body.Address, Secret: *body.Secret, Registry: registry})
 	if err != nil {
-		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `impossible to compute proof`})
+		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `impossible to compile claim`})
 		return
 	}
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `computation-ok`})
+	utils.NewPusher().Claims.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `The proof has been compiled`,
+		`type`:     `success`,
+	})
+	utils.NewPusher().Claims.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `Waiting for Sharp to process the transaction`,
+		`type`:     `info`,
+	})
 
 	/**************************************************************************
 	** Third python job -> Waiting for the job to be PROCESSED
 	**************************************************************************/
-	resultStatus, err := execPythonSharpStatusRegistry(registryKey, resultSharp[0], resultSharp[1])
+	resultStatus, err := execPythonSharpStatusClaim(registryKey, resultSharp[0], resultSharp[1])
 	if err != nil || !resultStatus {
-		utils.AbortWithLog(c, http.StatusNotFound, err, gin.H{`error`: `impossible to check the fact`})
+		utils.AbortWithLog(c, http.StatusBadRequest, nil, gin.H{`error`: `error while waiting for sharp`})
 		return
 	}
-	utils.NewPusher().Identities.Push(`PROCESS`, gin.H{`step`: `sharp-ok`})
-
-	c.JSON(http.StatusOK, gin.H{
-		`jobID`:  resultSharp[0],
-		`fact`:   resultSharp[1],
-		`output`: result,
+	utils.NewPusher().Claims.Push(`PROCESS`, gin.H{
+		`registry`: registryKey,
+		`step`:     `The proof has been processed`,
+		`type`:     `success`,
 	})
+
+	c.JSON(http.StatusOK, gin.H{`proof`: result[0], `hash`: result[1]})
 }

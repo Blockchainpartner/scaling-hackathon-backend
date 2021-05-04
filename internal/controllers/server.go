@@ -43,5 +43,10 @@ func NewRouter() *gin.Engine {
 		router.POST(`pusher`, c.AuthPusher)
 	}
 
+	{
+		c := proofController{}
+		router.POST(`proof/prove/:registryKey`, c.Prove)
+	}
+
 	return router
 }
