@@ -11,19 +11,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// UserRegistry represent the informations about the user's registry keys
+// UserRegistry represent the information about the user's registry keys
 type UserRegistry struct {
 	Key    *string `json:"key" bson:"key"`
 	Secret *string `json:"secret" bson:"secret"`
 }
 
-// KYCDob represent the informations about the user's KYC Dob field
+// KYCDob represent the information about the user's KYC Dob field
 type KYCDob struct {
 	Date *string `json:"date" bson:"date"`
 	Age  uint8   `json:"age" bson:"age"`
 }
 
-// KYCLocation represent the informations about the user's KYC Location field
+// KYCLocation represent the information about the user's KYC Location field
 type KYCLocation struct {
 	City     *string `json:"city,omitempty" bson:"city"`
 	Country  *string `json:"country,omitempty" bson:"country"`
@@ -35,7 +35,7 @@ type KYCLocation struct {
 	} `json:"street" bson:"street"`
 }
 
-// KYC represent the informations about the user's KYC
+// KYC represent the information about the user's KYC
 type KYC struct {
 	Name     *string     `json:"name" bson:"name"`
 	Nat      *string     `json:"nat" bson:"nat"`
@@ -43,6 +43,7 @@ type KYC struct {
 	Cell     *string     `json:"cell" bson:"cell"`
 	Email    *string     `json:"email" bson:"email"`
 	Gender   *string     `json:"gender" bson:"gender"`
+	Picture  *string     `json:"picture" bson:"picture"`
 	Disabled *bool       `json:"disabled" bson:"disabled"`
 	Dob      KYCDob      `json:"dob" bson:"dob"`
 	Location KYCLocation `json:"location" bson:"location"`
