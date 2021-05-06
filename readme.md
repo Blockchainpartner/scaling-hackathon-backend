@@ -21,6 +21,7 @@ That way, the user proves to the train company that they qualify for the right f
 > Then, we will need to compite the identities program with `cairo-compile main.cairo --output cairo.json --simple`.
 > We will then be able to get it's hash with `cairo-hash-program --program cairo.json` : `0x7f481cf54b923941934abbc67454374eaff004f6fef703783c80d9ddb3fc3b5`.
 
+--------------
 ### 2 - Deploying the contract
 > We need to deploy the contract on ropsten with the following arguments :
 > - _registriesProgramHash = `0x505ae0c3821ab690edb0fe45a63615f3600e168f3e60da824af1f28df54ecb1`
@@ -77,102 +78,102 @@ That way, the user proves to the train company that they qualify for the right f
 --------------
 
 >### 4 - Proving the identities registry
->>By running `cairo-run --program=registryHash.json --print_output --layout=small --program_input=registryHashInput.json`, we will have the following output :
->>```
->>Program output:
->>  0
->>  2672368424450419303116754025943367656383112088074817038016074650154564643
->>```
->>Where `0` is our old hash, and `2672368424450419303116754025943367656383112088074817038016074650154564643` the new one.
->>
->>Now, let's prove that this hash is legit for our Cairo program, using the Cairo Sharp prover : `cairo-sharp submit --program registryHash.json --program_input registryHashInput.json`. 
->>```
->>Running...
->>Submitting to SHARP...
->>Job sent.
->>Job key: e79ccff2-4376-4e9e-8b81-cc7e1fc86507
->>Fact: 0xc076e47e63f5f79c38cadfee3ef7fbe2eb70d45c22e0e7ae5d10344b5b32d392
->>```
->>
->>Here, we are telling to the Sharp Prover to compute our inputs with our program and to produce a `Fact` matching `hash(programHash, programOutputs)`. Our smartcontract will be able to check if this `fact` is valid with the prover's own smartContract, by calling the `isValid(fact)` function.  
->>Our smartcontract will have to recompute the fact from the output, just to be sure.  
->>We can use `cairo-sharp status e79ccff2-4376-4e9e-8b81-cc7e1fc86507` to check if the job has been processed (is live onChain).
->>```
->>PROCESSED
->>```
->>
->>Now we can submit our transaction to the smartContract in order to confirm the proof with the following tx:
->>```
->>updateRegistry(
->>	123456,
->>	0,
->>	2672368424450419303116754025943367656383112088074817038016074650154564643
->>)
->>```
->> ⚠️ If the number `2672368424450419303116754025943367656383112088074817038016074650154564643` is negative, we would have to convert it to it's positive countervalue by doing the following math : `hex(MY_NEGATIVE_NUMBER + 2**251 + 17*2**192 + 1)` in order to work with Cairo's Prime & pedersen hashes.
->>
->>The transaction can [be found here](https://ropsten.etherscan.io/tx/0x5d4ffc61ae08c86e72b37d96a61e7fdfef05836d02dc2119abf59317b85fa28c). We now have some users in out registry.
+>By running `cairo-run --program=registryHash.json --print_output --layout=small --program_input=registryHashInput.json`, we will have the following output :
+>```
+>Program output:
+>  0
+>  2672368424450419303116754025943367656383112088074817038016074650154564643
+>```
+>Where `0` is our old hash, and `2672368424450419303116754025943367656383112088074817038016074650154564643` the new one.
+>
+>Now, let's prove that this hash is legit for our Cairo program, using the Cairo Sharp prover : `cairo-sharp submit --program registryHash.json --program_input registryHashInput.json`. 
+>```
+>Running...
+>Submitting to SHARP...
+>Job sent.
+>Job key: e79ccff2-4376-4e9e-8b81-cc7e1fc86507
+>Fact: 0xc076e47e63f5f79c38cadfee3ef7fbe2eb70d45c22e0e7ae5d10344b5b32d392
+>```
+>
+>Here, we are telling to the Sharp Prover to compute our inputs with our program and to produce a `Fact` matching `hash(programHash, programOutputs)`. Our smartcontract will be able to check if this `fact` is valid with the prover's own smartContract, by calling the `isValid(fact)` function.  
+>Our smartcontract will have to recompute the fact from the output, just to be sure.  
+>We can use `cairo-sharp status e79ccff2-4376-4e9e-8b81-cc7e1fc86507` to check if the job has been processed (is live onChain).
+>```
+>PROCESSED
+>```
+>
+>Now we can submit our transaction to the smartContract in order to confirm the proof with the following tx:
+>```
+>updateRegistry(
+>	123456,
+>	0,
+>	2672368424450419303116754025943367656383112088074817038016074650154564643
+>)
+>```
+> ⚠️ If the number `2672368424450419303116754025943367656383112088074817038016074650154564643` is negative, we would have to convert it to it's positive countervalue by doing the following math : `hex(MY_NEGATIVE_NUMBER + 2**251 + 17*2**192 + 1)` in order to work with Cairo's Prime & pedersen hashes.
+>
+>The transaction can [be found here](https://ropsten.etherscan.io/tx/0x5d4ffc61ae08c86e72b37d96a61e7fdfef05836d02dc2119abf59317b85fa28c). We now have some users in out registry.
 >
 >------------
 >
 >### 5 - Add more identities
 >Yeah new users.
->>| ADDRESS (secret) | ENCRYPTED_ADDRESS | ENCRYPTION_KEY |
->>| --- | --- | --- |
->>| `0x9E63B020ae098E73cF201EE1357EDc72DFEaA518` | `0x2c3dfa2e5c789f23006973dabc65c817704156344d2fb49aac7f237fb96c6ab` | `3262016890316122496475965907754361478299744245975029426120053541882877319917` |
->>| `0xf51f06C26cA59954Ddce132E2a8EB026B0116658` | `0x3da30f7925ce33a7e93b186b8bd52ff7f64c52a42d79bebe891e132cb3d2b77` | `1953370059234117649198160759513056361430396932740856017941367296144751022849` |
->>
->>
->>So updated JSON :
->>```json
->>{
->>	"oldRegistry": [
->>		"0x6a3044f3172368c38bf9e73393275fd7e50a5e951ff8c09e4dd7b22d95a34f5",
->>		"0x6ed120ae443c419aee7e3ee2c98575edef4612ad381fe88d817f04e9e5911ae",
->>		"0x138e341ac1472ad700053c6a0e0fcdf41e7e4851ba2917fa9075f5e31e5ee2e",
->>		"0x755bf706ee73a22d3720569d0d3e4a7f9d28de4993a3b9c98014831c520a210",
->>		"0x53465c95bcfb00da727a9ffd24c5bf324329de9fc27c57e53a86a23cfda1044",
->>		"0x84afc9b9cdd81df7574ff788449dc3b6c0d6b5cf8a8f8f7536332d28b0add9"
->>	],
->>	"newRegistry": [
->>		"0x6a3044f3172368c38bf9e73393275fd7e50a5e951ff8c09e4dd7b22d95a34f5",
->>		"0x6ed120ae443c419aee7e3ee2c98575edef4612ad381fe88d817f04e9e5911ae",
->>		"0x138e341ac1472ad700053c6a0e0fcdf41e7e4851ba2917fa9075f5e31e5ee2e",
->>		"0x755bf706ee73a22d3720569d0d3e4a7f9d28de4993a3b9c98014831c520a210",
->>		"0x53465c95bcfb00da727a9ffd24c5bf324329de9fc27c57e53a86a23cfda1044",
->>		"0x84afc9b9cdd81df7574ff788449dc3b6c0d6b5cf8a8f8f7536332d28b0add9",
->>		"0x2c3dfa2e5c789f23006973dabc65c817704156344d2fb49aac7f237fb96c6ab",
->>		"0x3da30f7925ce33a7e93b186b8bd52ff7f64c52a42d79bebe891e132cb3d2b77"
->>	]
->>}
->>```
->>
->>So new output
->>```
->>Program output:
->>  2672368424450419303116754025943367656383112088074817038016074650154564643
->>  -727187437430369499786061208688114383190983125936168187665846498250270412883
->>```
->>
->>So new sharp 
->>```
->>Running...
->>Submitting to SHARP...
->>Job sent.
->>Job key: 3967b1f1-e994-426f-9872-485bb1eb612e
->>Fact: 0xba3365415dd3f5d4e92c4055cfb48eb561d773fe3e58a603db07dc692aef6cf5
->>```
->>
->>So new TX (with the prime dark magic)
->>```
->>updateRegistry(
->>	123456,
->>	2672368424450419303116754025943367656383112088074817038016074650154564643,
->>	2891315351235761713911261574406955722432124089395428512307245557885601607598
->>)
->>```
->>
->>And the [TX is here](https://ropsten.etherscan.io/tx/0xd3263c34b3509ad131e86c04a34ebf66162a3197b9a8f9bebaa9650e527019d2), with a new hash in the smartContract for the registryKey `123456` : `2891315351235761713911261574406955722432124089395428512307245557885601607598`
+>| ADDRESS (secret) | ENCRYPTED_ADDRESS | ENCRYPTION_KEY |
+>| --- | --- | --- |
+>| `0x9E63B020ae098E73cF201EE1357EDc72DFEaA518` | `0x2c3dfa2e5c789f23006973dabc65c817704156344d2fb49aac7f237fb96c6ab` | `3262016890316122496475965907754361478299744245975029426120053541882877319917` |
+>| `0xf51f06C26cA59954Ddce132E2a8EB026B0116658` | `0x3da30f7925ce33a7e93b186b8bd52ff7f64c52a42d79bebe891e132cb3d2b77` | `1953370059234117649198160759513056361430396932740856017941367296144751022849` |
+>
+>
+>So updated JSON :
+>```json
+>{
+>	"oldRegistry": [
+>		"0x6a3044f3172368c38bf9e73393275fd7e50a5e951ff8c09e4dd7b22d95a34f5",
+>		"0x6ed120ae443c419aee7e3ee2c98575edef4612ad381fe88d817f04e9e5911ae",
+>		"0x138e341ac1472ad700053c6a0e0fcdf41e7e4851ba2917fa9075f5e31e5ee2e",
+>		"0x755bf706ee73a22d3720569d0d3e4a7f9d28de4993a3b9c98014831c520a210",
+>		"0x53465c95bcfb00da727a9ffd24c5bf324329de9fc27c57e53a86a23cfda1044",
+>		"0x84afc9b9cdd81df7574ff788449dc3b6c0d6b5cf8a8f8f7536332d28b0add9"
+>	],
+>	"newRegistry": [
+>		"0x6a3044f3172368c38bf9e73393275fd7e50a5e951ff8c09e4dd7b22d95a34f5",
+>		"0x6ed120ae443c419aee7e3ee2c98575edef4612ad381fe88d817f04e9e5911ae",
+>		"0x138e341ac1472ad700053c6a0e0fcdf41e7e4851ba2917fa9075f5e31e5ee2e",
+>		"0x755bf706ee73a22d3720569d0d3e4a7f9d28de4993a3b9c98014831c520a210",
+>		"0x53465c95bcfb00da727a9ffd24c5bf324329de9fc27c57e53a86a23cfda1044",
+>		"0x84afc9b9cdd81df7574ff788449dc3b6c0d6b5cf8a8f8f7536332d28b0add9",
+>		"0x2c3dfa2e5c789f23006973dabc65c817704156344d2fb49aac7f237fb96c6ab",
+>		"0x3da30f7925ce33a7e93b186b8bd52ff7f64c52a42d79bebe891e132cb3d2b77"
+>	]
+>}
+>```
+>
+>So new output
+>```
+>Program output:
+>  2672368424450419303116754025943367656383112088074817038016074650154564643
+>  -727187437430369499786061208688114383190983125936168187665846498250270412883
+>```
+>
+>So new sharp 
+>```
+>Running...
+>Submitting to SHARP...
+>Job sent.
+>Job key: 3967b1f1-e994-426f-9872-485bb1eb612e
+>Fact: 0xba3365415dd3f5d4e92c4055cfb48eb561d773fe3e58a603db07dc692aef6cf5
+>```
+>
+>So new TX (with the prime dark magic)
+>```
+>updateRegistry(
+>	123456,
+>	2672368424450419303116754025943367656383112088074817038016074650154564643,
+>	2891315351235761713911261574406955722432124089395428512307245557885601607598
+>)
+>```
+>
+>And the [TX is here](https://ropsten.etherscan.io/tx/0xd3263c34b3509ad131e86c04a34ebf66162a3197b9a8f9bebaa9650e527019d2), with a new hash in the smartContract for the registryKey `123456` : `2891315351235761713911261574406955722432124089395428512307245557885601607598`
 >
 >------------------
 >
