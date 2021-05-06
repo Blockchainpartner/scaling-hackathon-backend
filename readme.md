@@ -77,7 +77,7 @@ That way, the user proves to the train company that they qualify for the right f
 
 --------------
 
->### 4 - Proving the identities registry
+### 4 - Proving the identities registry
 >By running `cairo-run --program=registryHash.json --print_output --layout=small --program_input=registryHashInput.json`, we will have the following output :
 >```
 >Program output:
@@ -116,7 +116,7 @@ That way, the user proves to the train company that they qualify for the right f
 
 ------------
 
->### 5 - Add more identities
+### 5 - Add more identities
 >Yeah new users.
 >| ADDRESS (secret) | ENCRYPTED_ADDRESS | ENCRYPTION_KEY |
 >| --- | --- | --- |
@@ -177,7 +177,7 @@ That way, the user proves to the train company that they qualify for the right f
 
 ------------------
 
->### 6 - Proving i'm IN !
+### 6 - Proving i'm IN !
 >In order to prove that I am in this registry, we will use the second Cairo Program (the one with the following hash: `0x505ae0c3821ab690edb0fe45a63615f3600e168f3e60da824af1f28df54ecb1`). The idea is to prove that from my address and my secret (I am the only one to know theses information), I can retrieve one of the entry on the registry.  
 >In order to do that we will need a new input file with my `secret`, my `address`, and the public registry of all the addresses registered.  
 >Let's say my address is `0x9E63B020ae098E73cF201EE1357EDc72DFEaA518`. With the table above, we can retrieve my secret, aka `3262016890316122496475965907754361478299744245975029426120053541882877319917`. Obviously, theses information are here only for the purpose of this example.  
