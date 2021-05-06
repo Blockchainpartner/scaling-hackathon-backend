@@ -92,7 +92,7 @@ func (x *RegistryMapping) List() ([]RegistryMapping, error) {
 
 //ListBy will perform a search in the Users collection to find all the elements
 func (x *RegistryMapping) ListBy(by bson.M) ([]RegistryMapping, error) {
-	query, err := db.RegistriesMapping.Find(context.Background(), by, options.Find().SetSort(bson.M{`identityIndex`: -1}))
+	query, err := db.RegistriesMapping.Find(context.Background(), by, options.Find().SetSort(bson.M{`identityIndex`: 1}))
 	if err != nil {
 		return nil, err
 	}
