@@ -18,7 +18,7 @@ That way, the user proves to the train company that they qualify for the right f
 > We first need to compile the registry program with `cairo-compile registryHash.cairo --output registryHash.json --simple`.
 > We will then be able to get it's hash with `cairo-hash-program --program registryHash.json` : `0x505ae0c3821ab690edb0fe45a63615f3600e168f3e60da824af1f28df54ecb1`.
 >
-> Then, we will need to compite the identities program with `cairo-compile main.cairo --output cairo.json --simple`.
+> Then, we will need to compile the identities program with `cairo-compile main.cairo --output cairo.json --simple`.
 > We will then be able to get it's hash with `cairo-hash-program --program cairo.json` : `0x7f481cf54b923941934abbc67454374eaff004f6fef703783c80d9ddb3fc3b5`.
 
 --------------
@@ -44,7 +44,7 @@ That way, the user proves to the train company that they qualify for the right f
 -----------
 
 ### 3 - Creating some identities
->In order to work with this cairo program, we will first need some identities with the following informations :
+>In order to work with this cairo program, we will first need some identities with the following information :
 >| ADDRESS (secret) | ENCRYPTED_ADDRESS | ENCRYPTION_KEY |
 >| --- | --- | --- |
 >| `0x02cEDd50ef234A2ee3CD3B87120e4367B37a3E61` | `0x6a3044f3172368c38bf9e73393275fd7e50a5e951ff8c09e4dd7b22d95a34f5` | `209076780032371316007324417983357412752269248774484056340191384479060305304` |
@@ -57,9 +57,9 @@ That way, the user proves to the train company that they qualify for the right f
 >  
 >The `ADDRESS` is a secret. **This is what we will be try to prove** (that the address is in the registry). We are displaying it only for testing purpose.  
 >The `ENCRYPTED_ADDRESS` matches `hash(ADDRESS, ENCRYPTION_KEY)`. This is the data that will be displayed in the registry.  
->The `ENCRYPTION_KEY` is a hash of a randomly generated password assciated to the user's account (`Web3.utils.randomHex(31)`) and the registryKey (here: `123456`) -> `hash(randomHex(31), 132456)`.
+>The `ENCRYPTION_KEY` is a hash of a randomly generated password associated to the user's account (`Web3.utils.randomHex(31)`) and the registryKey (here: `123456`) -> `hash(randomHex(31), 132456)`.
 >
->With theses informations, we will produce the following JSON file :
+>With theses information, we will produce the following JSON file :
 >```json
 >{
 >	"oldRegistry": [],
@@ -178,9 +178,9 @@ That way, the user proves to the train company that they qualify for the right f
 >------------------
 >
 >### 5 - Proving i'm IN !
->In order to prove that I am in this registry, we will use the second Cairo Program (the one with the following hash: `0x505ae0c3821ab690edb0fe45a63615f3600e168f3e60da824af1f28df54ecb1`). The idea is to prove that from my address and my secret (I am the only one to know theses informations), I can retrieve one of the entry on the registry.  
->In order to do that we will need a new input file with my `secret`, my `addresse`, and the public registry of all the addresses registered.  
->Let's say my address is `0x9E63B020ae098E73cF201EE1357EDc72DFEaA518`. With the table above, we can retrieve my secret, aka `3262016890316122496475965907754361478299744245975029426120053541882877319917`. Obviously, theses informations are here only for the purpose of this example.  
+>In order to prove that I am in this registry, we will use the second Cairo Program (the one with the following hash: `0x505ae0c3821ab690edb0fe45a63615f3600e168f3e60da824af1f28df54ecb1`). The idea is to prove that from my address and my secret (I am the only one to know theses information), I can retrieve one of the entry on the registry.  
+>In order to do that we will need a new input file with my `secret`, my `address`, and the public registry of all the addresses registered.  
+>Let's say my address is `0x9E63B020ae098E73cF201EE1357EDc72DFEaA518`. With the table above, we can retrieve my secret, aka `3262016890316122496475965907754361478299744245975029426120053541882877319917`. Obviously, theses information are here only for the purpose of this example.  
 >```json
 >{
 >	"secret": "3262016890316122496475965907754361478299744245975029426120053541882877319917",
@@ -203,7 +203,7 @@ That way, the user proves to the train company that they qualify for the right f
 >  829738850691260145934808358025321514871032962339753968951012900191018601261
 >  -727187437430369499786061208688114383190983125936168187665846498250270412883
 >```
->This output contains 2 informations needed to prove the information :
+>This output contains 2 information needed to prove the information :
 >- `829738850691260145934808358025321514871032962339753968951012900191018601261` is a specific hash corresponding to the element in the registry I match + my secret. In our case it's `hash(0x2c3dfa2e5c789f23006973dabc65c817704156344d2fb49aac7f237fb96c6ab, 3262016890316122496475965907754361478299744245975029426120053541882877319917)`.
 >- `-727187437430369499786061208688114383190983125936168187665846498250270412883` is the registry hash.
 >
