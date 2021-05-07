@@ -12,6 +12,25 @@ A user can then select a trip and select a fare based on his age or disability (
 Before completing the booking, we generate a proof using a Cairo program that the user belongs, for example, to the registry of people under 25.  
 That way, the user proves to the train company that they qualify for the right fare without having to reveal anything else.  
 
+## Setup
+- Install [Golang](https://golang.org/)
+- Install [Cairo](https://cairo-lang.org/docs/quickstart.html): `pip3 install cairo-lang-0.1.0.zip`
+- Create a .env file in the `cmd` folder with the following keys :
+```
+MONGODB_URI="MONGODB_SVR_LINK"
+MONGODB_DB_NAME="MONGODB_DB_NAME"
+
+ETH_NODE_URI="ROPSTEN_ETH_NODE_AS_WS"
+ETH_NODE_URI_HTTP="ROPSTEN_ETH_NODE_AS_HTTP"
+ETH_PRIVATE_KEY="SMARTCONTRACT_OWNERS_PRIVATE_KEY"
+ETH_CONTRACT_ADDRESS="SMARTCONTRACT_ADDRESS"
+
+PUSHER_SECRET="SECRET_FOR_THE_PUSHER_CONFIGURATION"
+PUSHER_KEY="KEY_FOR_THE_PUSHER_CONFIGURATION"
+PUSHER_ID="ID_FOR_THE_PUSHER_CONFIGURATION"
+```
+- Run `go build && ./cmd start-api` to get the backend listening on port `:8080`
+
 ## Cairo setup & flow
 
 ### 1 - Setup the cairo programs
