@@ -1,4 +1,4 @@
-# Turbo Proof
+# Alexandria
 
 > We're building a dApp based on identity registries that use STARKs (with Cairo) to verify some aspects of your identity.
 >
